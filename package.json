@@ -1,0 +1,55 @@
+{
+  "name": "top-image-title-generator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "plugma dev",
+    "build": "plugma build",
+    "preview": "plugma preview",
+    "release": "plugma release"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@figma/plugin-typings": "^1.100.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint": "^9.13.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.11.0",
+    "plugma": "^1.2.10",
+    "sass": "^1.93.2",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.11.0",
+    "vite": "^5.4.10"
+  },
+  "plugma": {
+    "manifest": {
+      "id": "tit-generator-kzn",
+      "name": "Top Image Title Generator v1.0.0",
+      "main": "src/main.ts",
+      "documentAccess": "dynamic-page",
+      "ui": "src/ui.tsx",
+      "editorType": [
+        "figma"
+      ],
+      "networkAccess": {
+        "allowedDomains": [
+          "*"
+        ],
+        "reasoning": "Allow all domains for development purposes",
+        "devAllowedDomains": [
+          "*"
+        ]
+      }
+    }
+  },
+  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67"
+}
