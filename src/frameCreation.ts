@@ -180,17 +180,17 @@ export const handleFrameCreation = async (
       }
     } else {
       frame = figma.createFrame();
-      
-      const exportSettings: ExportSettings[] = [
-        {
-          format: "PNG",
-          suffix: suffix,
-        },
-      ];
-
-      frame.exportSettings = exportSettings;
       frame.name = frameName;
     }
+
+    const exportSettings: ExportSettings[] = [
+      {
+        format: "PNG",
+        suffix: suffix,
+      },
+    ];
+
+    frame.exportSettings = exportSettings;
 
     frame.resize(650, 100);
     frame.layoutMode = "VERTICAL";
@@ -207,108 +207,83 @@ export const handleFrameCreation = async (
     frame.x = 0;
     frame.y = currentY;
 
-    const bothMissing = !hasText(lines[0]) && !hasText(lines[1]);
-    if (bothMissing) {
+    // DRY: handle both missing and present translations in a unified way
+    const existingTextNodes = frame.children.filter(
+      (c) => c.type === "TEXT"
+    ) as TextNode[];
+
+    let desiredLines: { content: string; isPrimary: boolean }[] = [
+      { content: lines[0], isPrimary: true },
+      { content: lines[1], isPrimary: false },
+    ].filter((l) => hasText(l.content));
+
+    if (desiredLines.length === 0) {
+      // Both missing: always ensure placeholder is present as first text node
       missingTranslations.push(countryCode);
       post("MISSING_TRANSLATION", {
         message: MESSAGES.PROCESS.MISSING_TRANSLATION(countryCode),
         country: countryCode,
       });
 
-      const mainFont = {
-        family: "Poppins",
-        style: primaryFontWeight,
-      } as FontName;
-      const keywordFont = {
-        family: "Poppins",
-        style: keywordFontWeight || "Regular",
-      } as FontName;
-
-      const ln = await buildTextNode({
-        content: `${countryCode} translation missing!`,
-        baseFont: mainFont,
-        keywordFont,
-        fontSize: asInt(primaryFontSize, 30),
-        keywordFontSize: asInt(keywordFontSize, 20),
-        lineHeight: { value: asInt(primaryLineHeight, 36), unit: "PIXELS" },
-        keywordLineHeight: keywordLineHeight
-          ? { value: asInt(keywordLineHeight, 24), unit: "PIXELS" }
-          : undefined,
-        fill: textColor,
-        keywords: highlightKeywords || "",
-      });
-      frame.appendChild(ln);
-      ln.layoutAlign = "STRETCH";
-      ln.layoutSizingHorizontal = "FILL";
+      desiredLines = [
+        {
+          content: `${countryCode} translation missing!`,
+          isPrimary: true,
+        },
+      ];
     }
 
-    if (!bothMissing) {
-      const existingTextNodes = frame.children.filter(
-        (c) => c.type === "TEXT"
-      ) as TextNode[];
-      const desiredLines: { content: string; isPrimary: boolean }[] = [
-        { content: lines[0], isPrimary: true },
-        { content: lines[1], isPrimary: false },
-      ].filter((l) => hasText(l.content));
+    // Remove extra text nodes if any (keep only as many as desiredLines)
+    if (existingTextNodes.length > desiredLines.length) {
+      existingTextNodes.slice(desiredLines.length).forEach((n) => n.remove());
+    }
 
-      if (existingTextNodes.length > desiredLines.length) {
-        existingTextNodes.slice(desiredLines.length).forEach((n) => n.remove());
-      }
+    for (let i = 0; i < desiredLines.length; i++) {
+      const { content, isPrimary } = desiredLines[i];
 
-      for (let i = 0; i < desiredLines.length; i++) {
-        const { content, isPrimary } = desiredLines[i];
+      // prettier-ignore
+      const currentFontSize = isPrimary ? primaryFontSize : secondaryFontSize;
+      // prettier-ignore
+      const currentLineHeight = isPrimary ? primaryLineHeight : secondaryLineHeight;
+      // prettier-ignore
+      const currentFontWeight = isPrimary ? primaryFontWeight : secondaryFontWeight;
+      // prettier-ignore
+      const mainFont = { family: "Poppins", style: currentFontWeight } as FontName;
+      // prettier-ignore
+      const keywordFont = { family: "Poppins", style: keywordFontWeight || "Regular" } as FontName;
 
-        const currentFontSize = isPrimary ? primaryFontSize : secondaryFontSize;
+      const maybeExisting = existingTextNodes[i];
 
-        const currentLineHeight = isPrimary
-          ? primaryLineHeight
-          : secondaryLineHeight;
+      if (maybeExisting) {
+        // Always update the text node to match the desired content
+        await ensureFont(mainFont.family, mainFont.style);
 
-        const currentFontWeight = isPrimary
-          ? primaryFontWeight
-          : secondaryFontWeight;
+        maybeExisting.fontName = mainFont;
+        maybeExisting.characters = content;
+        maybeExisting.fontSize = asInt(currentFontSize, 30);
 
-        const mainFont = {
-          family: "Poppins",
-          style: currentFontWeight,
-        } as FontName;
+        // prettier-ignore
+        maybeExisting.lineHeight = { value: asInt(currentLineHeight, 36), unit: "PIXELS" };
+        maybeExisting.fills = [solidPaint(textColor)];
+      } else {
+        const ln = await buildTextNode({
+          content,
+          baseFont: mainFont,
+          keywordFont,
+          fontSize: asInt(currentFontSize, 30),
+          keywordFontSize: asInt(keywordFontSize, 20),
+          lineHeight: { value: asInt(currentLineHeight, 36), unit: "PIXELS" },
+          keywordLineHeight: keywordLineHeight
+            ? { value: asInt(keywordLineHeight, 24), unit: "PIXELS" }
+            : undefined,
+          fill: textColor,
+          keywords: highlightKeywords || "",
+        });
 
-        const keywordFont = {
-          family: "Poppins",
-          style: keywordFontWeight || "Regular",
-        } as FontName;
+        frame.appendChild(ln);
 
-        const maybeExisting = existingTextNodes[i];
-        if (maybeExisting) {
-          if (maybeExisting.characters !== content) {
-            await ensureFont(mainFont.family, mainFont.style);
-            maybeExisting.fontName = mainFont;
-            maybeExisting.characters = content;
-            maybeExisting.fontSize = asInt(currentFontSize, 30);
-            maybeExisting.lineHeight = {
-              value: asInt(currentLineHeight, 36),
-              unit: "PIXELS",
-            };
-            maybeExisting.fills = [solidPaint(textColor)];
-          }
-        } else {
-          const ln = await buildTextNode({
-            content,
-            baseFont: mainFont,
-            keywordFont,
-            fontSize: asInt(currentFontSize, 30),
-            keywordFontSize: asInt(keywordFontSize, 20),
-            lineHeight: { value: asInt(currentLineHeight, 36), unit: "PIXELS" },
-            keywordLineHeight: keywordLineHeight
-              ? { value: asInt(keywordLineHeight, 24), unit: "PIXELS" }
-              : undefined,
-            fill: textColor,
-            keywords: highlightKeywords || "",
-          });
-          frame.appendChild(ln);
-          ln.layoutAlign = "STRETCH";
-          ln.layoutSizingHorizontal = "FILL";
-        }
+        ln.layoutAlign = "STRETCH";
+        ln.layoutSizingHorizontal = "FILL";
       }
     }
 
