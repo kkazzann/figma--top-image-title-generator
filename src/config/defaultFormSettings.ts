@@ -1,6 +1,7 @@
 export type FormSettings = {
   spreadsheetTab: string;
   dataRange: string;
+  suffix: string;
   primaryFontSize: string;
   primaryLineHeight: string;
   primaryFontWeight: string;
@@ -18,6 +19,7 @@ export type FormSettings = {
 export const defaultFormSettings: FormSettings = {
   spreadsheetTab: "",
   dataRange: "",
+  suffix: "",
   primaryFontSize: "",
   primaryLineHeight: "",
   primaryFontWeight: "Regular",

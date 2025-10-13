@@ -3,6 +3,7 @@ import { z } from "zod";
 export const formSettingsSchema = z.object({
   spreadsheetTab: z.string().min(1, "Tab name required"),
   dataRange: z.string().min(1, "Range required"),
+  suffix: z.string().optional().default(""),
   primaryFontSize: z.string().optional().default(""),
   primaryLineHeight: z.string().optional().default(""),
   primaryFontWeight: z.string().optional().default("Regular"),

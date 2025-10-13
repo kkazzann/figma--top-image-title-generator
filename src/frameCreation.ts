@@ -80,6 +80,7 @@ const computeSignature = (lines: string[], s: FormSettings) =>
   JSON.stringify([
     lines.map((l) => (l || "").trim()),
     s.primaryFontSize,
+    s.suffix,
     s.primaryLineHeight,
     s.primaryFontWeight,
     s.secondaryFontSize,
@@ -101,6 +102,7 @@ export const handleFrameCreation = async (
   const {
     backgroundColor,
     textColor,
+    suffix,
     primaryFontSize,
     primaryLineHeight,
     primaryFontWeight,
@@ -178,6 +180,15 @@ export const handleFrameCreation = async (
       }
     } else {
       frame = figma.createFrame();
+      
+      const exportSettings: ExportSettings[] = [
+        {
+          format: "PNG",
+          suffix: suffix,
+        },
+      ];
+
+      frame.exportSettings = exportSettings;
       frame.name = frameName;
     }
 

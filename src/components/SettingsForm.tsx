@@ -39,6 +39,14 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
             style={{ width: "64px" }}
             labelOnTop={!!formSettings.dataRange}
           />
+          <FormField
+            label="Export Suffix"
+            type="text"
+            value={formSettings.suffix}
+            onChange={(value) => onChange("suffix", value)}
+            style={{ width: "108px" }}
+            labelOnTop={!!formSettings.suffix}
+          />
         </div>
         <div className={styles.colors}>
           <FormField
