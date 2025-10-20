@@ -10,6 +10,7 @@ interface SettingsFormProps {
   onChange: (field: string, value: string) => void;
   onGenerate: () => void;
   onClearStorage: () => void;
+  onRecacheSheet: () => void;
   isLoading: boolean;
 }
 
@@ -18,8 +19,10 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
   onChange,
   onGenerate,
   onClearStorage,
+  onRecacheSheet,
   isLoading,
 }) => {
+
   return (
     <>
       <div className={styles.basicSettings}>
@@ -152,6 +155,13 @@ export const SettingsForm: React.FC<SettingsFormProps> = ({
           text="Clear Storage"
           onClick={onClearStorage}
           disabled={isLoading}
+        />
+        <Button
+          text="Recache Sheet"
+          onClick={onRecacheSheet}
+          disabled={isLoading}
+          background="#750000"
+          color="white"
         />
       </div>
     </>

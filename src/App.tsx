@@ -42,6 +42,10 @@ const App: React.FC = () => {
       }
 
       switch (message.type) {
+        case "MISSING_TAB_NAME":
+          showNotification(message.message, "error", false, true, false);
+          break;
+
         case "PAGE_CREATED":
         case "PAGE_SWITCHED":
           showNotification(message.message, "info", false, false, true);
@@ -243,6 +247,55 @@ const App: React.FC = () => {
     );
   };
 
+  const handleRecacheSheet = async () => {
+    const { spreadsheetTab } = formSettings;
+    if (!spreadsheetTab.trim()) {
+      showNotification(
+        MESSAGES.VALIDATION.MISSING_TAB_NAME,
+        "error",
+        false,
+        true,
+        false
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    showNotification("Recaching sheet data...", "working", true, false);
+
+    try {
+      const baseUrl = import.meta.env.VITE_DYNAMIC_BASE_URL;
+      const url = `${baseUrl}${spreadsheetTab}/force-refresh`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          skip_zrok_interstitial: "1",
+          Origin: "https://figma.com",
+          "User-Agent": "Figma-Plugin",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to recache sheet (${res.status})`);
+      }
+
+      const json = await res.json();
+      setIsLoading(false);
+
+      const message = json.message || "Sheet recached successfully!";
+      const isError = message.toLowerCase().includes("error");
+      showNotification(message, isError ? "error" : "success", false, true, false);
+    } catch (error) {
+      setIsLoading(false);
+      let message = "Failed to recache sheet";
+      if (error instanceof Error) message = error.message;
+      else if (typeof error === "string") message = error;
+      showNotification(message, "error", false, true, false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <SettingsForm
@@ -250,6 +303,7 @@ const App: React.FC = () => {
         onChange={handleInputChange}
         onGenerate={handleGenerate}
         onClearStorage={handleClearStorage}
+        onRecacheSheet={handleRecacheSheet}
         isLoading={isLoading}
       />
       {(notification.text || notification.isClosing) && (
