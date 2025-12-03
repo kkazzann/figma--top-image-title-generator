@@ -183,13 +183,18 @@ const App: React.FC = () => {
       );
       return;
     }
+    
+    let year = spreadsheetTab.split("::")[0];
+    let spreadsheet = spreadsheetTab.split("::")[1];
+    
     setIsLoading(true);
     clearLog();
     showNotification(MESSAGES.PROCESS.FETCHING_DATA, "working", true, false);
+    
     try {
       // Build request URL from env to avoid hardcoding the base
       const baseUrl = import.meta.env.VITE_DYNAMIC_BASE_URL;
-      const url = `${baseUrl}${spreadsheetTab}/${dataRange}`;
+      const url = `${baseUrl}${year}/${spreadsheet}/${dataRange}`;
       const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -263,9 +268,13 @@ const App: React.FC = () => {
     setIsLoading(true);
     showNotification("Recaching sheet data...", "working", true, false);
 
+    
+    let year = spreadsheetTab.split("::")[0];
+    let spreadsheet = spreadsheetTab.split("::")[1];
+    
     try {
       const baseUrl = import.meta.env.VITE_DYNAMIC_BASE_URL;
-      const url = `${baseUrl}${spreadsheetTab}/force-refresh`;
+      const url = `${baseUrl}${year}/${spreadsheet}/force-refresh`;
       const res = await fetch(url, {
         method: "GET",
         headers: {
