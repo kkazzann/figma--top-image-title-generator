@@ -8,6 +8,10 @@ const post = (type: string, extra: Record<string, any> = {}) =>
 
 const hasText = (value: string) => !!value && value.trim().length > 0;
 
+// Normalize translation content by converting <br /> and <br> into real line breaks (figma supports only \n)
+const normalizeContent = (value: string) =>
+  String(value ?? "").replace(/<br\s*\/?>/gi, "\n");
+
 const asInt = (raw: string | undefined, fallback: number) => {
   const n = parseInt(String(raw ?? "").trim(), 10);
   return Number.isFinite(n) ? n : fallback;
@@ -40,6 +44,7 @@ const buildTextNode = async ({
   fill: string;
   keywords: string;
 }) => {
+  content = normalizeContent(content);
   const node = figma.createText();
   await ensureFont(baseFont.family, baseFont.style);
   if (keywordFont && keywordFont !== baseFont) {
@@ -78,7 +83,7 @@ const buildTextNode = async ({
 // if something is wrong remove the frames and it will be recreated
 const computeSignature = (lines: string[], s: FormSettings) =>
   JSON.stringify([
-    lines.map((l) => (l || "").trim()),
+    lines.map((l) => normalizeContent((l || "").trim())),
     s.primaryFontSize,
     s.suffix,
     s.primaryLineHeight,
@@ -215,7 +220,7 @@ export const handleFrameCreation = async (
     let desiredLines: { content: string; isPrimary: boolean }[] = [
       { content: lines[0], isPrimary: true },
       { content: lines[1], isPrimary: false },
-    ].filter((l) => hasText(l.content));
+    ].map((l) => ({ ...l, content: normalizeContent(l.content) })).filter((l) => hasText(l.content));
 
     if (desiredLines.length === 0) {
       // Both missing: always ensure placeholder is present as first text node
@@ -240,6 +245,7 @@ export const handleFrameCreation = async (
 
     for (let i = 0; i < desiredLines.length; i++) {
       const { content, isPrimary } = desiredLines[i];
+      const normalizedContent = normalizeContent(content);
 
       // prettier-ignore
       const currentFontSize = isPrimary ? primaryFontSize : secondaryFontSize;
@@ -255,19 +261,18 @@ export const handleFrameCreation = async (
       const maybeExisting = existingTextNodes[i];
 
       if (maybeExisting) {
-        // Always update the text node to match the desired content
-        await ensureFont(mainFont.family, mainFont.style);
-
-        maybeExisting.fontName = mainFont;
-        maybeExisting.characters = content;
-        maybeExisting.fontSize = asInt(currentFontSize, 30);
-
-        // prettier-ignore
-        maybeExisting.lineHeight = { value: asInt(currentLineHeight, 36), unit: "PIXELS" };
-        maybeExisting.fills = [solidPaint(textColor)];
+        if (maybeExisting.characters !== normalizedContent) {
+          await ensureFont(mainFont.family, mainFont.style);
+          maybeExisting.fontName = mainFont;
+          maybeExisting.characters = normalizedContent;
+          maybeExisting.fontSize = asInt(currentFontSize, 30);
+          // prettier-ignore
+          maybeExisting.lineHeight = { value: asInt(currentLineHeight, 36), unit: "PIXELS" };
+          maybeExisting.fills = [solidPaint(textColor)];
+        }
       } else {
         const ln = await buildTextNode({
-          content,
+          content: normalizedContent,
           baseFont: mainFont,
           keywordFont,
           fontSize: asInt(currentFontSize, 30),
